@@ -116,6 +116,65 @@
   color: var(--text-muted);
 }
 
+/* Barra de Chips de Categorías Deslizable */
+.category-chips-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 1rem 0;
+  margin-bottom: 1.25rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.category-chips-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.category-chip-btn {
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-main);
+  transition: var(--transition);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.category-chip-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.category-chip-btn.active {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+  box-shadow: 0 4px 10px rgba(168, 107, 93, 0.3);
+}
+
+.category-chip-btn .chip-count {
+  font-size: 0.72rem;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.08);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-pill);
+}
+
+.category-chip-btn.active .chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+}
+
 /* Barra de Herramientas de la Tienda */
 .shop-toolbar {
   display: flex;
@@ -745,10 +804,20 @@
 /* ==========================================================================
    RESPONSIVE COMPONENTES
    ========================================================================== */
+@media (min-width: 901px) {
+  .category-chips-bar {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .shop-layout, .legal-layout, .contact-grid {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1.75rem;
+  }
+
+  .shop-sidebar .filter-group:first-child {
+    display: none; /* Se usan los chips superiores para mejor UX móvil */
   }
 
   .shop-sidebar, .legal-nav {

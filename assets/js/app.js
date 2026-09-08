@@ -20,24 +20,42 @@ function initMobileMenu() {
   const toggleBtn = document.getElementById("mobileMenuToggle");
   const navMenu = document.getElementById("navMenu");
 
-  if (toggleBtn && navMenu) {
-    toggleBtn.addEventListener("click", () => {
-      navMenu.classList.toggle("active");
-      const icon = toggleBtn.querySelector("svg");
-      if (navMenu.classList.contains("active")) {
-        toggleBtn.setAttribute("aria-expanded", "true");
-      } else {
-        toggleBtn.setAttribute("aria-expanded", "false");
-      }
-    });
+  if (!toggleBtn || !navMenu) return;
 
-    // Cerrar al dar click en un enlace
-    navMenu.querySelectorAll(".nav-link").forEach(link => {
-      link.addEventListener("click", () => {
-        navMenu.classList.remove("active");
-      });
-    });
+  let backdrop = document.querySelector(".nav-backdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.className = "nav-backdrop";
+    document.body.appendChild(backdrop);
   }
+
+  const closeMenu = () => {
+    navMenu.classList.remove("active");
+    backdrop.classList.remove("active");
+    toggleBtn.setAttribute("aria-expanded", "false");
+    document.body.style.overflow = "";
+  };
+
+  const openMenu = () => {
+    navMenu.classList.add("active");
+    backdrop.classList.add("active");
+    toggleBtn.setAttribute("aria-expanded", "true");
+    document.body.style.overflow = "hidden";
+  };
+
+  toggleBtn.addEventListener("click", () => {
+    if (navMenu.classList.contains("active")) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  });
+
+  backdrop.addEventListener("click", closeMenu);
+
+  navMenu.querySelectorAll(".nav-link").forEach(link => {
+    link.addEventListener("click", closeMenu);
+  });
 }
 
 /* ==========================================================================
@@ -184,34 +202,70 @@ function initShopCatalog() {
 
 function renderCategoryFilters() {
   const listContainer = document.getElementById("categoryFilterList");
-  if (!listContainer) return;
+  const chipsContainer = document.getElementById("categoryChipsBar");
 
-  let html = "";
-  PRISMANEW_CATEGORIES.forEach(cat => {
+  const categories = PRISMANEW_CATEGORIES.map(cat => {
     const count = cat.id === "todos" 
       ? PRISMANEW_PRODUCTS.length 
       : PRISMANEW_PRODUCTS.filter(p => p.category === cat.id).length;
-
-    html += `
-      <li>
-        <button class="category-filter-btn ${cat.id === activeCategory ? 'active' : ''}" data-cat="${cat.id}">
-          <span>${cat.name}</span>
-          <span class="category-count">${count}</span>
-        </button>
-      </li>
-    `;
+    return { ...cat, count };
   });
 
-  listContainer.innerHTML = html;
-
-  listContainer.querySelectorAll(".category-filter-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      listContainer.querySelectorAll(".category-filter-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      activeCategory = btn.dataset.cat;
-      applyFilters();
+  // 1. Sidebar desktop
+  if (listContainer) {
+    let html = "";
+    categories.forEach(cat => {
+      html += `
+        <li>
+          <button class="category-filter-btn ${cat.id === activeCategory ? 'active' : ''}" data-cat="${cat.id}">
+            <span>${cat.name}</span>
+            <span class="category-count">${cat.count}</span>
+          </button>
+        </li>
+      `;
     });
+    listContainer.innerHTML = html;
+
+    listContainer.querySelectorAll(".category-filter-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setCategory(btn.dataset.cat);
+      });
+    });
+  }
+
+  // 2. Chips deslizables (móvil y tablet)
+  if (chipsContainer) {
+    let chipsHtml = "";
+    categories.forEach(cat => {
+      chipsHtml += `
+        <button class="category-chip-btn ${cat.id === activeCategory ? 'active' : ''}" data-cat="${cat.id}">
+          <span>${cat.name}</span>
+          <span class="chip-count">${cat.count}</span>
+        </button>
+      `;
+    });
+    chipsContainer.innerHTML = chipsHtml;
+
+    chipsContainer.querySelectorAll(".category-chip-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        setCategory(btn.dataset.cat);
+      });
+    });
+  }
+}
+
+function setCategory(catId) {
+  activeCategory = catId;
+
+  // Sincronizar clases activas
+  document.querySelectorAll(".category-filter-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.cat === catId);
   });
+  document.querySelectorAll(".category-chip-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.cat === catId);
+  });
+
+  applyFilters();
 }
 
 function applyFilters() {
@@ -271,16 +325,17 @@ function renderProductCards(products, container) {
   let html = "";
   products.forEach(p => {
     const waMsg = encodeURIComponent(`Hola Prismanew, me interesa información y disponibilidad de la prenda: ${p.name} (${formatCOP(p.price)}).`);
+    const defaultSize = (p.sizes && p.sizes.length > 0) ? p.sizes[0] : "Única";
     html += `
       <article class="product-card">
-        <div class="product-thumb">
+        <div class="product-thumb" onclick="openQuickView('${p.id}')" role="button" tabindex="0" title="Ver detalles de ${p.name}" style="cursor:pointer;">
           <img src="${p.image}" alt="${p.name}" loading="lazy">
           ${p.badge ? `<span class="product-badge-tag">${p.badge}</span>` : ''}
-          <div class="product-quick-actions">
+          <div class="product-quick-actions" onclick="event.stopPropagation()">
             <button type="button" class="btn btn-secondary btn-quick-view" onclick="openQuickView('${p.id}')">
               Vista Rápida
             </button>
-            <button type="button" class="btn btn-primary btn-add-cart" onclick="window.prismanewCart.addItem('${p.id}', '${p.sizes[0]}', 1)">
+            <button type="button" class="btn btn-primary btn-add-cart" onclick="window.prismanewCart.addItem('${p.id}', '${defaultSize}', 1)">
               + Añadir
             </button>
           </div>
